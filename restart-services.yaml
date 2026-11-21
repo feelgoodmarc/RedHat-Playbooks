@@ -1,0 +1,13 @@
+- name: Restart selected services on target systems
+  hosts: "{{ target_hosts | default('all') }}"
+  become: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.12
+    services_to_restart: "{{ (selected_services.split(',') | map('trim') | reject('equalto', '') | list) if (selected_services is string) else (selected_services | default([])) }}"
+
+  tasks:
+    - name: Restart specified services
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: restarted
+      loop: "{{ services_to_restart }}"
