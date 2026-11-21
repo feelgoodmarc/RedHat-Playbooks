@@ -1,0 +1,17 @@
+- name: Update RHEL systems
+  hosts: all
+  become: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.12
+
+  tasks:
+    - name: Upgrade all packages on RHEL
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+
+    - name: Restart chronyd service
+      ansible.builtin.systemd:
+        name: chronyd
+        state: restarted
+        enabled: true

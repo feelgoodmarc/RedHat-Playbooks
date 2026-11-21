@@ -1,0 +1,47 @@
+- name: Finish RHEL upgrade, reboot if needed, and install EPEL 10 + htop
+  hosts: all
+  become: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.12
+
+  tasks:
+    - name: Run dnf upgrade with metadata refresh
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+        update_cache: true
+
+    - name: Check if a newer kernel is installed than the running kernel
+      ansible.builtin.shell: |
+        set -o pipefail
+        RUNNING=$(uname -r)
+        LATEST=$(rpm -q --last kernel | head -n 1 | awk '{print $1}' | sed 's/^kernel-//')
+        if [ "$RUNNING" != "$LATEST" ]; then
+          echo "REBOOT_REQUIRED"
+        else
+          echo "NO_REBOOT"
+        fi
+      args:
+        executable: /bin/bash
+      register: kernel_check
+      changed_when: false
+
+    - name: Reboot system if a new kernel was installed
+      ansible.builtin.reboot:
+        msg: "Rebooting RHEL system due to newly installed kernel"
+        reboot_timeout: 600
+      when: "'REBOOT_REQUIRED' in kernel_check.stdout"
+
+    - name: Install EPEL 10 repository
+      ansible.builtin.dnf:
+        name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
+        state: present
+
+    - name: Refresh DNF metadata cache
+      ansible.builtin.dnf:
+        update_cache: true
+
+    - name: Install htop
+      ansible.builtin.dnf:
+        name: htop
+        state: present

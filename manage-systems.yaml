@@ -1,0 +1,29 @@
+- name: Manage Linux systems via AWX Survey
+  hosts: "{{ target_hosts | default('all') }}"
+  become: true
+
+  tasks:
+    - name: Upgrade RHEL packages
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+        update_cache: true
+      when:
+        - ansible_os_family == "RedHat"
+        - action_type in ["upgrade", "full"]
+
+    - name: Upgrade Ubuntu/Debian packages
+      ansible.builtin.apt:
+        upgrade: dist
+        update_cache: true
+      when:
+        - ansible_os_family == "Debian"
+        - action_type in ["upgrade", "full"]
+
+    - name: Install htop on RHEL
+      ansible.builtin.dnf:
+        name: htop
+        state: present
+      when:
+        - ansible_os_family == "RedHat"
+        - action_type in ["htop", "full"]

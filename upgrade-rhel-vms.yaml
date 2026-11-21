@@ -1,0 +1,12 @@
+---
+- name: Update RHEL systems
+  hosts: rhel-servers
+  become: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.12
+
+  tasks:
+    - name: Run dnf upgrade command on RHEL
+      ansible.builtin.shell: dnf upgrade -y
+      register: dnf_output
+      changed_when: "'Nothing to do.' not in dnf_output.stdout"
