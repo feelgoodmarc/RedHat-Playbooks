@@ -1,23 +1,25 @@
 ---
-- name: Ensure Fail2ban is installed and running on RHEL
-  hosts: rhel-servers
+- name: Ensure Fail2ban is installed and running
+  hosts: linux-servers
   become: true
 
   tasks:
-    - name: Enable CRB repository (required by EPEL on RHEL)
+    - name: Enable CRB repository on RHEL
       ansible.builtin.command:
         cmd: subscription-manager repos --enable codeready-builder-for-rhel-{{ ansible_distribution_major_version }}-{{ ansible_architecture }}-rpms
       register: crb_result
       changed_when: "'is enabled' in crb_result.stdout"
+      when: ansible_distribution == "RedHat"
 
-    - name: Install EPEL release package
+    - name: Install EPEL release package on RHEL-based systems
       ansible.builtin.dnf:
         name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm"
         state: present
         disable_gpg_check: true
+      when: ansible_os_family == "RedHat"
 
     - name: Install Fail2ban
-      ansible.builtin.dnf:
+      ansible.builtin.package:
         name: fail2ban
         state: present
 
